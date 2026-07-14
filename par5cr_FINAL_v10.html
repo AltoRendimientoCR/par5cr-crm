@@ -432,7 +432,7 @@ tr:hover td{background:var(--bg2)}
         </div>
         <button class="btn" onclick="fitOpenFactory()" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.4)">Email Fábrica</button>
         <button class="btn" onclick="fitGeneratePDF()" style="background:#fff;color:var(--ac);font-weight:700">PDF Cliente</button>
-        <button onclick="closeM('m-fitting')" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1">×</button>
+        <button onclick="document.getElementById('m-fitting').classList.remove('open')" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1">×</button>
       </div>
     </div>
     <div style="padding:20px" id="fit-form-body">
@@ -446,15 +446,15 @@ tr:hover td{background:var(--bg2)}
   <div style="background:#fff;border-radius:16px;width:90%;max-width:700px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between">
       <h2 style="font-size:15px;font-weight:700">Email para Fábrica</h2>
-      <button onclick="g('m-fit-factory').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--txm)">×</button>
+      <button onclick="document.getElementById('m-fit-factory').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--txm)">×</button>
     </div>
     <div style="padding:18px;overflow-y:auto;flex:1">
       <p style="font-size:12px;color:var(--txm);margin-bottom:10px">Copiá y pegalo en el email a fábrica:</p>
       <textarea id="fit-factory-txt" readonly style="width:100%;height:420px;font-family:'Courier New',monospace;font-size:12px;border:1px solid var(--brm);border-radius:8px;padding:12px;resize:vertical"></textarea>
     </div>
     <div style="padding:12px 20px;border-top:1px solid var(--br);display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn bo" onclick="g('m-fit-factory').style.display='none'">Cerrar</button>
-      <button class="btn bp" onclick="navigator.clipboard.writeText(g('fit-factory-txt').value).then(function(){alert('Copiado.');g('m-fit-factory').style.display='none';})">Copiar todo</button>
+      <button class="btn bo" onclick="document.getElementById('m-fit-factory').style.display='none'">Cerrar</button>
+      <button class="btn bp" onclick="navigator.clipboard.writeText(document.getElementById('fit-factory-txt').value).then(function(){alert('Copiado.');document.getElementById('m-fit-factory').style.display='none';})">Copiar todo</button>
     </div>
   </div>
 </div>
@@ -690,7 +690,7 @@ function _cancelToRow(c){
 // ── Load all data from Supabase into db ─────────────────────────────
 async function _loadFromSupabase(){
   var role = _currentProfile?_currentProfile.role:"coach";
-  var [s,l,sc,p,ex,b,n,adj,cl,pr] = await Promise.all([
+  var [s,l,sc,p,ex,b,n,adj,cl,pr,fitRows,fitPayRows] = await Promise.all([
     _sb.from("students").select("*"),
     _sb.from("lessons").select("*"),
     _sb.from("schedule").select("*"),
@@ -700,7 +700,9 @@ async function _loadFromSupabase(){
     _sb.from("notes").select("*"),
     role==="owner"?_sb.from("adjustments").select("*"):Promise.resolve({data:[]}),
     _sb.from("cancel_log").select("*"),
-    _sb.from("profiles").select("*")
+    _sb.from("profiles").select("*"),
+    _sb.from("fittings").select("*"),
+    _sb.from("fit_payments").select("*")
   ]);
   db = {
     students: (s.data||[]).map(_rowToStudent),
@@ -713,6 +715,8 @@ async function _loadFromSupabase(){
     adjustments: (adj.data||[]).map(_rowToAdj),
     cancelLog: (cl.data||[]).map(_rowToCancel),
     coaches: (pr.data||[]).map(function(p){return {id:p.id,name:p.full_name,role:p.role,color:p.coach_color||"#1d6f42",initials:p.initials||"XX"};}),
+    fittings: (fitRows.data||[]).map(function(r){return {id:r.id,num:r.num,name:r.name,email:r.email,phone:r.phone,date:r.date,hcp:r.hcp,club:r.club,encargado:r.encargado,estado:r.estado,height:r.height,hand:r.hand,handUnit:r.hand_unit,finger:r.finger,wrist:r.wrist,wristUnit:r.wrist_unit,glove:r.glove,dominant:r.dominant,sp7:r.sp7,spdr:r.spdr,trajH:r.traj_h,trajS:r.traj_s,brand:r.brand,notes:r.notes,recs:r.recs,delivery:r.delivery,pnotes:r.pnotes,specs:r.specs,total:r.total,createdAt:r.created_at};}),
+    fitPayments: (fitPayRows.data||[]).map(function(r){return {id:r.id,fitId:r.fit_id,amount:r.amount,currency:r.currency,date:r.date,method:r.method,ref:r.ref};}),
   };
 }
 
@@ -2129,11 +2133,30 @@ function fitSave(){
   data.id=id;data.num=num;data.createdAt=data.createdAt||todayS();
   var idx=db.fittings.findIndex(function(f){return f.id===id;});
   if(idx>-1)db.fittings[idx]=data;else db.fittings.push(data);
-  // Supabase save
+  // Supabase save — map to table columns
   if(_currentUser&&_dbLoaded){
-    _sb.from('fittings').upsert([data]).then(function(r){if(r.error)console.error('fit save',r.error);});
+    var sbRow={
+      id:data.id,num:data.num,
+      name:data.name,email:data.email||null,phone:data.phone||null,
+      date:data.date||null,hcp:data.hcp||null,club:data.club||null,
+      encargado:data.encargado||null,estado:data.estado||null,
+      height:data.height||null,
+      hand:data.hand||null,hand_unit:data.handUnit||null,
+      finger:data.finger||null,
+      wrist:data.wrist||null,wrist_unit:data.wristUnit||null,
+      glove:data.glove||null,dominant:data.dominant||null,
+      sp7:data.sp7||null,spdr:data.spdr||null,
+      traj_h:data.trajH||null,traj_s:data.trajS||null,
+      brand:data.brand||null,notes:data.notes||null,
+      recs:data.recs||null,delivery:data.delivery||null,pnotes:data.pnotes||null,
+      specs:data.specs||null,total:data.total||0
+    };
+    _sb.from('fittings').upsert([sbRow]).then(function(r){
+      if(r.error)console.error('fit save error',r.error);
+      else console.log('fit saved OK');
+    });
   }
-  save();
+  // Also update local db with full data object
   closeM('m-fitting');
   renderFitting();renderDash();
   alert('Cotización '+num+' guardada.');
@@ -2267,7 +2290,10 @@ function fitChangeStatus(id,status){
   var f=db.fittings.find(function(x){return x.id===id;});
   if(!f)return;
   f.estado=status;
-  if(_currentUser&&_dbLoaded) _sb.from('fittings').upsert([f]).then(function(r){if(r.error)console.error(r.error);});
+  if(_currentUser&&_dbLoaded){
+    var sbRow={id:f.id,num:f.num,name:f.name,email:f.email||null,phone:f.phone||null,date:f.date||null,hcp:f.hcp||null,club:f.club||null,encargado:f.encargado||null,estado:f.estado||null,height:f.height||null,hand:f.hand||null,hand_unit:f.handUnit||null,finger:f.finger||null,wrist:f.wrist||null,wrist_unit:f.wristUnit||null,glove:f.glove||null,dominant:f.dominant||null,sp7:f.sp7||null,spdr:f.spdr||null,traj_h:f.trajH||null,traj_s:f.trajS||null,brand:f.brand||null,notes:f.notes||null,recs:f.recs||null,delivery:f.delivery||null,pnotes:f.pnotes||null,specs:f.specs||null,total:f.total||0};
+    _sb.from('fittings').upsert([sbRow]).then(function(r){if(r.error)console.error('status save',r.error);});
+  }
   save();renderFitting();renderDash();
 }
 
@@ -2367,7 +2393,10 @@ function fitSavePay(fitId){
     method:(document.getElementById('fpp-mt')||{}).value||'cash',
     ref:((document.getElementById('fpp-ref')||{}).value||'').trim()};
   db.fitPayments.push(pay);
-  if(_currentUser&&_dbLoaded) _sb.from('fit_payments').upsert([pay]).then(function(r){if(r.error)console.error(r.error);});
+  if(_currentUser&&_dbLoaded){
+    var payRow={id:pay.id,fit_id:pay.fitId,amount:pay.amount,currency:pay.currency||'USD',date:pay.date,method:pay.method||null,ref:pay.ref||null};
+    _sb.from('fit_payments').upsert([payRow]).then(function(r){if(r.error)console.error('fitpay',r.error);});
+  }
   save();
   var modal=document.getElementById('fit-pay-modal');if(modal)modal.remove();
   renderFitting();renderDash();

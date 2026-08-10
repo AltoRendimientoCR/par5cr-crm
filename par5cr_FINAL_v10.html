@@ -744,7 +744,15 @@ function _sbSaveLesson(l){
   });
 }
 function _sbDelLesson(id){if(!_currentUser||!_dbLoaded)return;_sb.from("lessons").delete().eq("id",id).then(function(r){if(r.error)console.error("del lesson",r.error);});}
-function _sbSaveSch(s){if(!_currentUser||!_dbLoaded)return;_sb.from("schedule").upsert([_scheduleToRow(s)]).then(function(r){if(r.error)console.error("save sch",r.error);});}
+function _sbSaveSch(s){
+  if(!_currentUser||!_dbLoaded){console.warn("sbSaveSch: skip — user:",!!_currentUser,"loaded:",_dbLoaded);return;}
+  var row=_scheduleToRow(s);
+  console.log("sbSaveSch: saving",row.id,row.type,row.date);
+  _sb.from("schedule").upsert([row],{onConflict:"id"}).then(function(r){
+    if(r.error){console.error("sbSaveSch ERROR:",JSON.stringify(r.error));}
+    else{console.log("sbSaveSch OK:",row.id,row.type);}
+  });
+}
 function _sbDelSch(id){if(!_currentUser||!_dbLoaded)return;_sb.from("schedule").delete().eq("id",id).then(function(r){if(r.error)console.error("del sch",r.error);});}
 function _sbSavePay(p){if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;_sb.from("payments").upsert([_paymentToRow(p)]).then(function(r){if(r.error)console.error("save pay",r.error);});}
 function _sbDelPay(id){
@@ -3468,6 +3476,7 @@ window._fitToggleInc = _fitToggleInc;
 window._fitSelectIronSet = _fitSelectIronSet;
 window._fitUpdateSetPrice = _fitUpdateSetPrice;
 window._fitCalcTotal = _fitCalcTotal;
+window.acTogglePendFilter = acTogglePendFilter;
 
 })();
 </script>

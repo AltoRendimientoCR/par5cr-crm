@@ -734,12 +734,27 @@ function save(){
   // No-op: all writes now go through individual save functions below
 }
 function _sbSaveStudent(s){if(!_currentUser||!_dbLoaded)return;_sb.from("students").upsert([_studentToRow(s)]).then(function(r){if(r.error)console.error("save student",r.error);});}
-function _sbSaveLesson(l){if(!_currentUser||!_dbLoaded)return;_sb.from("lessons").upsert([_lessonToRow(l)]).then(function(r){if(r.error)console.error("save lesson",r.error);});}
+function _sbSaveLesson(l){
+  if(!_currentUser||!_dbLoaded){console.warn("sbSaveLesson: skip — user:",!!_currentUser,"loaded:",_dbLoaded);return;}
+  var row=_lessonToRow(l);
+  console.log("sbSaveLesson: saving",row.id,row.type,row.date);
+  _sb.from("lessons").upsert([row],{onConflict:"id"}).then(function(r){
+    if(r.error){console.error("sbSaveLesson ERROR:",JSON.stringify(r.error));}
+    else{console.log("sbSaveLesson OK:",row.id,row.type);}
+  });
+}
 function _sbDelLesson(id){if(!_currentUser||!_dbLoaded)return;_sb.from("lessons").delete().eq("id",id).then(function(r){if(r.error)console.error("del lesson",r.error);});}
 function _sbSaveSch(s){if(!_currentUser||!_dbLoaded)return;_sb.from("schedule").upsert([_scheduleToRow(s)]).then(function(r){if(r.error)console.error("save sch",r.error);});}
 function _sbDelSch(id){if(!_currentUser||!_dbLoaded)return;_sb.from("schedule").delete().eq("id",id).then(function(r){if(r.error)console.error("del sch",r.error);});}
 function _sbSavePay(p){if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;_sb.from("payments").upsert([_paymentToRow(p)]).then(function(r){if(r.error)console.error("save pay",r.error);});}
-function _sbDelPay(id){if(!_currentUser||!_dbLoaded)return;_sb.from("payments").delete().eq("id",id).then(function(r){if(r.error)console.error("del pay",r.error);});}
+function _sbDelPay(id){
+  if(!_currentUser||!_dbLoaded){console.warn("sbDelPay: skip");return;}
+  console.log("sbDelPay: deleting",id);
+  _sb.from("payments").delete().eq("id",id).then(function(r){
+    if(r.error){console.error("sbDelPay ERROR:",JSON.stringify(r.error));}
+    else{console.log("sbDelPay OK:",id);}
+  });
+}
 function _sbSaveExtra(ex){if(!_currentUser||!_dbLoaded)return;_sb.from("extras").upsert([_extraToRow(ex)]).then(function(r){if(r.error)console.error("save extra",r.error);});}
 function _sbDelExtra(id){if(!_currentUser||!_dbLoaded)return;_sb.from("extras").delete().eq("id",id).then(function(r){if(r.error)console.error("del extra",r.error);});}
 function _sbSaveBlock(b){if(!_currentUser||!_dbLoaded)return;_sb.from("blocks").upsert([_blockToRow(b)]).then(function(r){if(r.error)console.error("save block",r.error);});}

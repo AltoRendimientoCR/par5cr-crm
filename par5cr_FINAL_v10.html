@@ -733,28 +733,57 @@ function save(){
   if(!_currentUser||!_dbLoaded)return;
   // No-op: all writes now go through individual save functions below
 }
-function _sbSaveStudent(s){if(!_currentUser||!_dbLoaded)return;_sb.from("students").upsert([_studentToRow(s)]).then(function(r){if(r.error)console.error("save student",r.error);});}
+function _sbSaveStudent(s){
+  if(!_currentUser||!_dbLoaded)return;
+  var row=_studentToRow(s);
+  _sb.from("students").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("students").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveStudent insert ERROR:",r2.error);});
+    }
+  });
+}
 function _sbSaveLesson(l){
-  if(!_currentUser||!_dbLoaded){console.warn("sbSaveLesson: skip — user:",!!_currentUser,"loaded:",_dbLoaded);return;}
+  if(!_currentUser||!_dbLoaded){console.warn("sbSaveLesson: skip");return;}
   var row=_lessonToRow(l);
   console.log("sbSaveLesson: saving",row.id,row.type,row.date);
-  _sb.from("lessons").upsert([row],{onConflict:"id"}).then(function(r){
-    if(r.error){console.error("sbSaveLesson ERROR:",JSON.stringify(r.error));}
-    else{console.log("sbSaveLesson OK:",row.id,row.type);}
+  _sb.from("lessons").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("lessons").insert([row]).then(function(r2){
+        if(r2.error)console.error("sbSaveLesson insert ERROR:",JSON.stringify(r2.error));
+        else console.log("sbSaveLesson insert OK:",row.id);
+      });
+    } else {
+      console.log("sbSaveLesson update OK:",row.id);
+    }
   });
 }
 function _sbDelLesson(id){if(!_currentUser||!_dbLoaded)return;_sb.from("lessons").delete().eq("id",id).then(function(r){if(r.error)console.error("del lesson",r.error);});}
 function _sbSaveSch(s){
-  if(!_currentUser||!_dbLoaded){console.warn("sbSaveSch: skip — user:",!!_currentUser,"loaded:",_dbLoaded);return;}
+  if(!_currentUser||!_dbLoaded){console.warn("sbSaveSch: skip");return;}
   var row=_scheduleToRow(s);
   console.log("sbSaveSch: saving",row.id,row.type,row.date);
-  _sb.from("schedule").upsert([row],{onConflict:"id"}).then(function(r){
-    if(r.error){console.error("sbSaveSch ERROR:",JSON.stringify(r.error));}
-    else{console.log("sbSaveSch OK:",row.id,row.type);}
+  _sb.from("schedule").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      // Record doesn't exist yet — insert it
+      _sb.from("schedule").insert([row]).then(function(r2){
+        if(r2.error)console.error("sbSaveSch insert ERROR:",JSON.stringify(r2.error));
+        else console.log("sbSaveSch insert OK:",row.id,row.type);
+      });
+    } else {
+      console.log("sbSaveSch update OK:",row.id,row.type);
+    }
   });
 }
 function _sbDelSch(id){if(!_currentUser||!_dbLoaded)return;_sb.from("schedule").delete().eq("id",id).then(function(r){if(r.error)console.error("del sch",r.error);});}
-function _sbSavePay(p){if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;_sb.from("payments").upsert([_paymentToRow(p)]).then(function(r){if(r.error)console.error("save pay",r.error);});}
+function _sbSavePay(p){
+  if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;
+  var row=_paymentToRow(p);
+  _sb.from("payments").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("payments").insert([row]).then(function(r2){if(r2.error)console.error("sbSavePay insert ERROR:",r2.error);});
+    }
+  });
+}
 function _sbDelPay(id){
   if(!_currentUser||!_dbLoaded){console.warn("sbDelPay: skip");return;}
   console.log("sbDelPay: deleting",id);
@@ -763,14 +792,54 @@ function _sbDelPay(id){
     else{console.log("sbDelPay OK:",id);}
   });
 }
-function _sbSaveExtra(ex){if(!_currentUser||!_dbLoaded)return;_sb.from("extras").upsert([_extraToRow(ex)]).then(function(r){if(r.error)console.error("save extra",r.error);});}
+function _sbSaveExtra(ex){
+  if(!_currentUser||!_dbLoaded)return;
+  var row=_extraToRow(ex);
+  _sb.from("extras").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("extras").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveExtra insert ERROR:",r2.error);});
+    }
+  });
+}
 function _sbDelExtra(id){if(!_currentUser||!_dbLoaded)return;_sb.from("extras").delete().eq("id",id).then(function(r){if(r.error)console.error("del extra",r.error);});}
-function _sbSaveBlock(b){if(!_currentUser||!_dbLoaded)return;_sb.from("blocks").upsert([_blockToRow(b)]).then(function(r){if(r.error)console.error("save block",r.error);});}
+function _sbSaveBlock(b){
+  if(!_currentUser||!_dbLoaded)return;
+  var row=_blockToRow(b);
+  _sb.from("blocks").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("blocks").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveBlock insert ERROR:",r2.error);});
+    }
+  });
+}
 function _sbDelBlock(id){if(!_currentUser||!_dbLoaded)return;_sb.from("blocks").delete().eq("id",id).then(function(r){if(r.error)console.error("del block",r.error);});}
 function _sbDelNote(id){if(!_currentUser||!_dbLoaded)return;_sb.from("notes").delete().eq("id",id).then(function(r){if(r.error)console.error("del note",r.error);});}
-function _sbSaveNote(n){if(!_currentUser||!_dbLoaded)return;_sb.from("notes").upsert([_noteToRow(n)]).then(function(r){if(r.error)console.error("save note",r.error);});}
-function _sbSaveCancel(c){if(!_currentUser||!_dbLoaded)return;_sb.from("cancel_log").upsert([_cancelToRow(c)]).then(function(r){if(r.error)console.error("save cancel",r.error);});}
-function _sbSaveAdj(a){if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;_sb.from("adjustments").upsert([_adjToRow(a)]).then(function(r){if(r.error)console.error("save adj",r.error);});}
+function _sbSaveNote(n){
+  if(!_currentUser||!_dbLoaded)return;
+  var row=_noteToRow(n);
+  _sb.from("notes").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("notes").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveNote insert ERROR:",r2.error);});
+    }
+  });
+}
+function _sbSaveCancel(c){
+  if(!_currentUser||!_dbLoaded)return;
+  var row=_cancelToRow(c);
+  _sb.from("cancel_log").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("cancel_log").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveCancel insert ERROR:",r2.error);});
+    }
+  });
+}
+function _sbSaveAdj(a){
+  if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;
+  var row=_adjToRow(a);
+  _sb.from("adjustments").update(row).eq("id",row.id).then(function(r){
+    if(r.error||!r.data||r.data.length===0){
+      _sb.from("adjustments").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveAdj insert ERROR:",r2.error);});
+    }
+  });
+}
 function _saveLang(l){
   try{localStorage.setItem("p5cr_lang",l);}catch(e){}
 }
@@ -2189,9 +2258,13 @@ function fitSave(){
       recs:data.recs||null,delivery:data.delivery||null,pnotes:data.pnotes||null,
       specs:data.specs||null,total:data.total||0
     };
-    _sb.from('fittings').upsert([sbRow]).then(function(r){
-      if(r.error)console.error('fit save error',r.error);
-      else console.log('fit saved OK');
+    _sb.from('fittings').update(sbRow).eq('id',sbRow.id).then(function(r){
+      if(r.error||!r.data||r.data.length===0){
+        _sb.from('fittings').insert([sbRow]).then(function(r2){
+          if(r2.error)console.error('fit insert ERROR:',r2.error);
+          else console.log('fit insert OK');
+        });
+      } else {console.log('fit update OK');}
     });
   }
   // Also update local db with full data object
@@ -2330,7 +2403,7 @@ function fitChangeStatus(id,status){
   f.estado=status;
   if(_currentUser&&_dbLoaded){
     var sbRow={id:f.id,num:f.num,name:f.name,email:f.email||null,phone:f.phone||null,date:f.date||null,hcp:f.hcp||null,club:f.club||null,encargado:f.encargado||null,estado:f.estado||null,height:f.height||null,hand:f.hand||null,hand_unit:f.handUnit||null,finger:f.finger||null,wrist:f.wrist||null,wrist_unit:f.wristUnit||null,glove:f.glove||null,dominant:f.dominant||null,sp7:f.sp7||null,spdr:f.spdr||null,traj_h:f.trajH||null,traj_s:f.trajS||null,brand:f.brand||null,notes:f.notes||null,recs:f.recs||null,delivery:f.delivery||null,pnotes:f.pnotes||null,specs:f.specs||null,total:f.total||0};
-    _sb.from('fittings').upsert([sbRow]).then(function(r){if(r.error)console.error('status save',r.error);});
+    _sb.from('fittings').update(sbRow).eq('id',sbRow.id).then(function(r){if(r.error)console.error('fit status update ERROR:',r.error);});
   }
   save();renderFitting();renderDash();
 }
@@ -2481,7 +2554,7 @@ function fitSavePay(fitId){
   db.fitPayments.push(pay);
   if(_currentUser&&_dbLoaded){
     var payRow={id:pay.id,fit_id:pay.fitId,amount:pay.amount,currency:pay.currency||'USD',date:pay.date,method:pay.method||null,ref:pay.ref||null};
-    _sb.from('fit_payments').upsert([payRow]).then(function(r){if(r.error)console.error('fitpay',r.error);});
+    _sb.from('fit_payments').insert([payRow]).then(function(r){if(r.error)console.error('fit_payments insert ERROR:',r.error);});
   }
   save();
   var modal=document.getElementById('fit-pay-modal');if(modal)modal.remove();

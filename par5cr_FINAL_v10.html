@@ -733,54 +733,12 @@ function save(){
   if(!_currentUser||!_dbLoaded)return;
   // No-op: all writes now go through individual save functions below
 }
-function _sbSaveStudent(s){
-  if(!_currentUser||!_dbLoaded)return;
-  var row=_studentToRow(s);
-  _sb.from("students").select("id").eq("id",row.id).then(function(chk){
-    if(chk.data&&chk.data.length>0){
-      _sb.from("students").update(row).eq("id",row.id).then(function(r){if(r.error)console.error("sbSaveStudent update ERROR:",r.error);});
-    } else {
-      _sb.from("students").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveStudent insert ERROR:",r2.error);});
-    }
-  });
-}
-function _sbSaveLesson(l){
-  if(!_currentUser||!_dbLoaded)return;
-  var row=_lessonToRow(l);
-  _sb.from("lessons").select("id").eq("id",row.id).then(function(chk){
-    if(chk.data&&chk.data.length>0){
-      _sb.from("lessons").update(row).eq("id",row.id).then(function(r){if(r.error)console.error("sbSaveLesson update ERROR:",r.error);});
-    } else {
-      _sb.from("lessons").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveLesson insert ERROR:",r2.error);});
-    }
-  });
-}
+function _sbSaveStudent(s){if(!_currentUser||!_dbLoaded)return;_sb.from("students").upsert([_studentToRow(s)],{onConflict:"id"}).then(function(r){if(r.error)console.error("save student",r.error);});}
+function _sbSaveLesson(l){if(!_currentUser||!_dbLoaded)return;_sb.from("lessons").upsert([_lessonToRow(l)],{onConflict:"id"}).then(function(r){if(r.error)console.error("save lesson",r.error);});}
 function _sbDelLesson(id){if(!_currentUser||!_dbLoaded)return;_sb.from("lessons").delete().eq("id",id).then(function(r){if(r.error)console.error("del lesson",r.error);});}
-function _sbSaveSch(s){
-  if(!_currentUser||!_dbLoaded){console.warn("sbSaveSch: skip");return;}
-  var row=_scheduleToRow(s);
-  console.log("sbSaveSch: saving",row.id,row.type,row.date);
-  // Check if record exists first, then update or insert
-  _sb.from("schedule").select("id").eq("id",row.id).then(function(chk){
-    if(chk.data&&chk.data.length>0){
-      _sb.from("schedule").update(row).eq("id",row.id).then(function(r){
-        if(r.error)console.error("sbSaveSch update ERROR:",JSON.stringify(r.error));
-        else console.log("sbSaveSch update OK:",row.id,row.type);
-      });
-    } else {
-      _sb.from("schedule").insert([row]).then(function(r2){
-        if(r2.error)console.error("sbSaveSch insert ERROR:",JSON.stringify(r2.error));
-        else console.log("sbSaveSch insert OK:",row.id,row.type);
-      });
-    }
-  });
-}
+function _sbSaveSch(s){if(!_currentUser||!_dbLoaded)return;_sb.from("schedule").upsert([_scheduleToRow(s)],{onConflict:"id"}).then(function(r){if(r.error)console.error("save sch",r.error);});}
 function _sbDelSch(id){if(!_currentUser||!_dbLoaded)return;_sb.from("schedule").delete().eq("id",id).then(function(r){if(r.error)console.error("del sch",r.error);});}
-function _sbSavePay(p){
-  if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;
-  var row=_paymentToRow(p);
-  _sb.from("payments").insert([row]).then(function(r){if(r.error)console.error("sbSavePay insert ERROR:",r.error);});
-}
+function _sbSavePay(p){if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;_sb.from("payments").insert([_paymentToRow(p)]).then(function(r){if(r.error)console.error("save pay",r.error);});}
 function _sbDelPay(id){
   if(!_currentUser||!_dbLoaded){console.warn("sbDelPay: skip");return;}
   console.log("sbDelPay: deleting",id);
@@ -789,36 +747,12 @@ function _sbDelPay(id){
     else{console.log("sbDelPay OK:",id);}
   });
 }
-function _sbSaveExtra(ex){
-  if(!_currentUser||!_dbLoaded)return;
-  var row=_extraToRow(ex);
-  _sb.from("extras").insert([row]).then(function(r){if(r.error)console.error("sbSaveExtra insert ERROR:",r.error);});
-}
+function _sbSaveExtra(ex){if(!_currentUser||!_dbLoaded)return;_sb.from("extras").insert([_extraToRow(ex)]).then(function(r){if(r.error)console.error("save extra",r.error);});}
 function _sbDelExtra(id){if(!_currentUser||!_dbLoaded)return;_sb.from("extras").delete().eq("id",id).then(function(r){if(r.error)console.error("del extra",r.error);});}
-function _sbSaveBlock(b){
-  if(!_currentUser||!_dbLoaded)return;
-  var row=_blockToRow(b);
-  _sb.from("blocks").select("id").eq("id",row.id).then(function(chk){
-    if(chk.data&&chk.data.length>0){
-      _sb.from("blocks").update(row).eq("id",row.id).then(function(r){if(r.error)console.error("sbSaveBlock update ERROR:",r.error);});
-    } else {
-      _sb.from("blocks").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveBlock insert ERROR:",r2.error);});
-    }
-  });
-}
+function _sbSaveBlock(b){if(!_currentUser||!_dbLoaded)return;_sb.from("blocks").upsert([_blockToRow(b)],{onConflict:"id"}).then(function(r){if(r.error)console.error("save block",r.error);});}
 function _sbDelBlock(id){if(!_currentUser||!_dbLoaded)return;_sb.from("blocks").delete().eq("id",id).then(function(r){if(r.error)console.error("del block",r.error);});}
 function _sbDelNote(id){if(!_currentUser||!_dbLoaded)return;_sb.from("notes").delete().eq("id",id).then(function(r){if(r.error)console.error("del note",r.error);});}
-function _sbSaveNote(n){
-  if(!_currentUser||!_dbLoaded)return;
-  var row=_noteToRow(n);
-  _sb.from("notes").select("id").eq("id",row.id).then(function(chk){
-    if(chk.data&&chk.data.length>0){
-      _sb.from("notes").update(row).eq("id",row.id).then(function(r){if(r.error)console.error("sbSaveNote update ERROR:",r.error);});
-    } else {
-      _sb.from("notes").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveNote insert ERROR:",r2.error);});
-    }
-  });
-}
+function _sbSaveNote(n){if(!_currentUser||!_dbLoaded)return;_sb.from("notes").upsert([_noteToRow(n)],{onConflict:"id"}).then(function(r){if(r.error)console.error("save note",r.error);});}
 function _sbSaveCancel(c){
   if(!_currentUser||!_dbLoaded)return;
   var row=_cancelToRow(c);
@@ -828,17 +762,7 @@ function _sbSaveCancel(c){
     }
   });
 }
-function _sbSaveAdj(a){
-  if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;
-  var row=_adjToRow(a);
-  _sb.from("adjustments").select("id").eq("id",row.id).then(function(chk){
-    if(chk.data&&chk.data.length>0){
-      _sb.from("adjustments").update(row).eq("id",row.id).then(function(r){if(r.error)console.error("sbSaveAdj update ERROR:",r.error);});
-    } else {
-      _sb.from("adjustments").insert([row]).then(function(r2){if(r2.error)console.error("sbSaveAdj insert ERROR:",r2.error);});
-    }
-  });
-}
+function _sbSaveAdj(a){if(!_currentUser||!_dbLoaded||!(_currentProfile&&_currentProfile.role==="owner"))return;_sb.from("adjustments").upsert([_adjToRow(a)],{onConflict:"id"}).then(function(r){if(r.error)console.error("save adj",r.error);});}
 function _saveLang(l){
   try{localStorage.setItem("p5cr_lang",l);}catch(e){}
 }
@@ -2257,13 +2181,7 @@ function fitSave(){
       recs:data.recs||null,delivery:data.delivery||null,pnotes:data.pnotes||null,
       specs:data.specs||null,total:data.total||0
     };
-    _sb.from('fittings').select('id').eq('id',sbRow.id).then(function(chk){
-      if(chk.data&&chk.data.length>0){
-        _sb.from('fittings').update(sbRow).eq('id',sbRow.id).then(function(r){if(r.error)console.error('fit update ERROR:',r.error);else console.log('fit update OK');});
-      } else {
-        _sb.from('fittings').insert([sbRow]).then(function(r2){if(r2.error)console.error('fit insert ERROR:',r2.error);else console.log('fit insert OK');});
-      }
-    });
+    _sb.from('fittings').upsert([sbRow],{onConflict:'id'}).then(function(r){if(r.error)console.error('fit save error',r.error);});
   }
   // Also update local db with full data object
   closeM('m-fitting');

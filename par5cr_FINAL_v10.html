@@ -526,7 +526,7 @@ tr:hover td{background:var(--bg2)}
     <div class="fg"><label>Photo URL</label><input id="sf-pu" type="url"></div>
     <input type="hidden" id="sf-id">
   </div>
-  <div class="mf"><button class="btn bo" data-cl="m-student">Cancel</button><button class="btn bp" id="b-sv-s">Save</button></div>
+  <div class="mf"><button class="btn bo" data-cl="m-student">Cancel</button><button class="btn bp" id="b-sv-s" onclick="saveStudent()">Save</button></div>
 </div></div>
 
 <div class="mo" id="m-lesson"><div class="md">
@@ -546,7 +546,7 @@ tr:hover td{background:var(--bg2)}
     <div class="fr"><div class="fg"><label>Score</label><input id="lf-sc" type="number"></div><div class="fg"><label>Course</label><input id="lf-co" type="text"></div></div>
     <input type="hidden" id="lf-id">
   </div>
-  <div class="mf"><button class="btn bo" data-cl="m-lesson">Cancel</button><button class="btn bp" id="b-sv-l">Save</button></div>
+  <div class="mf"><button class="btn bo" data-cl="m-lesson">Cancel</button><button class="btn bp" id="b-sv-l" onclick="saveLesson()">Save</button></div>
 </div></div>
 
 <div class="mo" id="m-schedule"><div class="md" style="max-width:500px">
@@ -573,7 +573,7 @@ tr:hover td{background:var(--bg2)}
     </div>
     <input type="hidden" id="sch-edit-id">
   </div>
-  <div class="mf"><button class="btn bo" data-cl="m-schedule">Cancel</button><button class="btn bp" id="b-sv-sch">Book</button></div>
+  <div class="mf"><button class="btn bo" data-cl="m-schedule">Cancel</button><button class="btn bp" id="b-sv-sch" onclick="saveSch()">Book</button></div>
 </div></div>
 
 <div class="mo" id="m-payment"><div class="md" style="max-width:440px">
@@ -586,7 +586,7 @@ tr:hover td{background:var(--bg2)}
     <div class="fg"><label>Mes al cobro <span style="font-size:10px;color:var(--txm);font-weight:400">(mes donde aparece el pago)</span></label><select id="pf-mk" style="width:100%;padding:8px 12px;border:1px solid var(--brm);border-radius:var(--rx);background:var(--bg);font-family:var(--f)"></select></div>
     <div class="fg"><label>Reference</label><input id="pf-rf" type="text"></div>
   </div>
-  <div class="mf"><button class="btn bo" data-cl="m-payment">Cancel</button><button class="btn bp" id="b-sv-p">Record</button></div>
+  <div class="mf"><button class="btn bo" data-cl="m-payment">Cancel</button><button class="btn bp" id="b-sv-p" onclick="savePayment()">Record</button></div>
 </div></div>
 
 <div class="mo" id="m-block"><div class="md" style="max-width:480px">
@@ -3466,6 +3466,15 @@ window._fitSelectIronSet = _fitSelectIronSet;
 window._fitUpdateSetPrice = _fitUpdateSetPrice;
 window._fitCalcTotal = _fitCalcTotal;
 window.acTogglePendFilter = acTogglePendFilter;
+window.saveLesson = saveLesson;
+window.saveStudent = saveStudent;
+window.saveSch = saveSch;
+window.savePayment = savePayment;
+window.editStudent = editStudent;
+window.addTask = addTask;
+window.delLesson = delLesson;
+window.delExtra = delExtra;
+window.openProfile = openProfile;
 
 })();
 </script>
